@@ -16,26 +16,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, Ref, onMounted } from 'vue';
+import { ref, Ref, onMounted, onUnmounted } from 'vue';
 
 const canvasRef: Ref<HTMLCanvasElement | undefined> = ref();
 const context: Ref<CanvasRenderingContext2D | undefined> = ref();
-const canvasRender = () => {
+
+const canvasRender = (steps = 1, stepSize = 4) => {
+  let y = stepSize;
   if (canvasRef.value && context.value) {
-    const STEP = 4;
     context.value.fillStyle = 'white';
-    for (let i = STEP; i < canvasRef.value.width; i += STEP) {
-      for (let j = STEP; j <= i; j += STEP) {
+    for (let i = stepSize * steps; i < canvasRef.value.width; i += stepSize) {
+      if (y > canvasRef.value.height - stepSize)
+        y = canvasRef.value.height - stepSize;
+      for (let j = stepSize; j <= y; j += stepSize) {
         context.value.beginPath();
         context.value.arc(i, j, 0.5, 0, 2 * Math.PI, true);
         context.value.fill();
       }
+      y += stepSize;
     }
   }
 };
 
+const canvasResize = () => {
+  if (canvasRef.value) {
+    canvasRef.value.width = window.innerWidth;
+    canvasRender(window.innerWidth / 10);
+  }
+};
+
 onMounted(() => {
+  if (canvasRef.value) canvasRef.value.width = window.innerWidth;
   context.value = canvasRef.value?.getContext('2d') || undefined;
-  canvasRender();
+  canvasRender(window.innerWidth / 10);
+  window.addEventListener('resize', canvasResize, false);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', canvasResize, false);
 });
 </script>
